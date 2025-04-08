@@ -4,7 +4,7 @@ import streamlit as st
 st.set_page_config(page_title="Duplicate Remover", layout="centered")
 st.title("🧹 Remove Duplicate Lines + Extract Name/Title/Email/Phone")
 
-DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of", "headshot"]
+DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of", "headshot", "Portrait"]
 
 DEFAULT_JOB_TITLES = [
     "President", "Vice President", "CEO", "COO", "CFO", "CMO", "CTO", "Chief", "Director", "Executive",
@@ -44,7 +44,7 @@ if st.button("Remove Duplicates and Extract Contacts"):
         job_keywords = [kw for kw in job_keywords if kw not in exclusions]
 
     user_keywords = [kw.strip().lower() for kw in extra_keyword_input.split(",") if kw.strip()]
-    all_removal_keywords = list(set(DEFAULT_REMOVE_KEYWORDS + user_keywords))
+    all_removal_keywords = [kw.lower() for kw in (DEFAULT_REMOVE_KEYWORDS + user_keywords)]
 
     lines = [line.strip() for line in input_text.splitlines() if line.strip()]
     seen = set()
