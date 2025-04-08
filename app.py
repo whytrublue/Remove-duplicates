@@ -4,7 +4,7 @@ import streamlit as st
 st.set_page_config(page_title="Duplicate Remover", layout="centered")
 st.title("🧹 Remove Duplicate Lines + Extract Name/Title/Email")
 
-DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of"]
+DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of", "Headshot"]
 
 DEFAULT_JOB_TITLES = [
     "President", "Vice President", "CEO", "COO", "CFO", "CMO", "CTO", "Chief", "Director", "Executive",
