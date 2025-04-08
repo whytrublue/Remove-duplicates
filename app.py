@@ -6,10 +6,14 @@ st.title("🧹 Remove Duplicate Lines with Filters")
 
 # 🧠 You can update this list anytime to include more job titles
 DEFAULT_JOB_TITLES = [
-    "Manager", "Director", "Officer", "Supervisor",
-    "President", "Specialist", "Accountant", "Controller",
-    "Developer", "Engineer", "Assistant", "Coordinator",
-    "Lead", "Chief", "Technician", "Operations" president, director, ceo, chief, controller, sr, jr, accountant, executive, operation, manager, finance, technician, Hr, specialist, maintenance, photo of
+    "President", "Vice President", "CEO", "COO", "CFO", "CMO", "CTO", "Chief", "Director", "Executive", "Managing Director", "Owner", "Partner", 
+    "Co-Founder", "Founder", "Principal", "Chairman", "Chairperson", "Manager", "Operations Manager", "Project Manager", "Product Manager", 
+    "General Manager", "Finance Manager", "HR Manager", "Office Manager", "Maintenance Manager", "Account Manager", "Marketing Manager", 
+    "Officer", "Controller", "Specialist", "Analyst", "Consultant", "Coordinator", "Assistant", "Advisor", "Representative", "Strategist", 
+    "Auditor", "Buyer", "Planner", "Supervisor", "Team Lead", "Lead", "Sr", "Senior", "Jr", "Junior", "Intern", "Apprentice", "Trainee", 
+    "Photographer", "Designer", "Editor", "Videographer", "Artist", "Content Creator", "Creative Director", "Developer", "Engineer", "Technician", 
+    "IT Support", "Support Engineer", "Programmer", "Web Developer", "Systems Administrator", "Architect"
+
 ]
 
 # --- User Inputs ---
