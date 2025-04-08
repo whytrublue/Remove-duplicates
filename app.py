@@ -16,7 +16,7 @@ DEFAULT_JOB_TITLES = [
     "Auditor", "Buyer", "Planner", "Supervisor", "Team Lead", "Lead", "Sr", "Senior", "Jr", "Junior", "Intern", "Apprentice", "Trainee", 
     "Photographer", "Designer", "Editor", "Videographer", "Artist", "Content Creator", "Creative Director", "Developer", "Engineer", "Technician", 
     "IT Support", "Support Engineer", "Programmer", "Web Developer", "Systems Administrator", "Architect", "Concierge", "Quality Assurance",
-    "Accountant"
+    "Accountant","Property Manager"
 ]
 
 # --- 📝 User Inputs ---
