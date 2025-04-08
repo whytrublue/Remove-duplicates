@@ -4,7 +4,7 @@ import streamlit as st
 st.set_page_config(page_title="Duplicate Remover", layout="centered")
 st.title("🧹 Remove Duplicate Lines + Extract Name/Title/Email/Phone")
 
-DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of", "headshot", "Portrait"]
+DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of", "headshot", "portrait"]
 
 DEFAULT_JOB_TITLES = [
     "President", "Vice President", "CEO", "COO", "CFO", "CMO", "CTO", "Chief", "Director", "Executive",
@@ -31,11 +31,11 @@ extra_keyword_input = st.text_input(
 )
 
 if st.button("Remove Duplicates and Extract Contacts"):
-    job_keywords = [kw.lower() for kw in DEFAULT_JOB_TITLES]
-
+    # Prepare removal keywords
     user_keywords = [kw.strip().lower() for kw in extra_keyword_input.split(",") if kw.strip()]
-    all_removal_keywords = list(set([k.lower() for k in DEFAULT_REMOVE_KEYWORDS] + user_keywords))
+    all_removal_keywords = list(set([kw.lower() for kw in DEFAULT_REMOVE_KEYWORDS] + user_keywords))
 
+    # Process input lines
     lines = [line.strip() for line in input_text.splitlines() if line.strip()]
     seen = set()
     unique_lines = []
@@ -48,19 +48,12 @@ if st.button("Remove Duplicates and Extract Contacts"):
             unique_lines.append(line)
             seen.add(line_lower)
 
-    cleaned_text = "\n".join(unique_lines)
-    st.success(f"✅ {len(unique_lines)} unique lines (removed {len(lines) - len(unique_lines)} duplicates or filtered lines)")
-    st.text_area("🎯 Cleaned Result (copy from here):", value=cleaned_text, height=300)
+    # Prepare to extract contact info
+    entries = []
+    current = {"Name": "", "Title": "", "Email": "", "Mobile": "", "Direct": "", "Office": ""}
 
-    st.download_button(
-        label="📄 Download Result as TXT",
-        data=cleaned_text,
-        file_name="cleaned_output.txt",
-        mime="text/plain"
-    )
-
-    # ✨ Extract contact info
-    name_pattern = re.compile(r"^[A-Z][a-z]+(?:\s[A-Z][a-z]+)+$")
+    # Regex patterns
+    name_pattern = re.compile(r"^[A-Z][a-zA-Z\s]+$")
     email_pattern = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
     phone_patterns = {
         "mobile": re.compile(r"(?:mobile|cell|cellphone)[\s:\-]*([\+\d\(\)\s\-]{7,})", re.IGNORECASE),
@@ -68,30 +61,37 @@ if st.button("Remove Duplicates and Extract Contacts"):
         "office": re.compile(r"(?:tel|telephone|office|work|phone)[\s:\-]*([\+\d\(\)\s\-]{7,})", re.IGNORECASE),
     }
 
-    entries = []
-    current = {"Name": "", "Title": "", "Email": "", "Mobile": "", "Direct": "", "Office": ""}
-
     for line in unique_lines:
         line = line.strip()
+        
+        # Match name
         if name_pattern.match(line):
             if current["Name"]:
                 entries.append(current.copy())
                 current = {"Name": "", "Title": "", "Email": "", "Mobile": "", "Direct": "", "Office": ""}
             current["Name"] = line
-        elif any(title.lower() in line.lower() for title in DEFAULT_JOB_TITLES):
+        
+        # Match job titles
+        if any(title.lower() in line.lower() for title in DEFAULT_JOB_TITLES):
             current["Title"] = line
-        elif email_match := email_pattern.search(line):
+        
+        # Match email
+        email_match = email_pattern.search(line)
+        if email_match:
             current["Email"] = email_match.group(0)
-        else:
-            for key, pattern in phone_patterns.items():
-                match = pattern.search(line)
-                if match:
-                    num = re.sub(r"[^\d+]", "", match.group(1))
-                    current[key.capitalize()] = num
+        
+        # Match phone numbers
+        for key, pattern in phone_patterns.items():
+            match = pattern.search(line)
+            if match:
+                num = re.sub(r"[^\d+]", "", match.group(1))
+                current[key.capitalize()] = num
 
+    # Add the last entry if not empty
     if current["Name"]:
         entries.append(current)
 
+    # Display extracted data
     if entries:
         st.subheader("📬 Extracted Structured Contacts")
         csv_header = "Name,Title,Email,Mobile,Direct,Office"
