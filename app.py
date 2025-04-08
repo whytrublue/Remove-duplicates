@@ -2,7 +2,7 @@ import re
 import streamlit as st
 
 st.set_page_config(page_title="Duplicate Remover", layout="centered")
-st.title("🧹 Remove Duplicate Lines + Extract Name/Title/Email")
+st.title("🧹 Remove Duplicate Lines + Extract Name/Title/Email/Phone")
 
 DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of", "headshot"]
 
@@ -71,11 +71,11 @@ if st.button("Remove Duplicates and Extract Contacts"):
         mime="text/plain"
     )
 
-    # ✨ Extract contacts from full original input
+    # ✨ Extract name/title/email
     contact_pattern = re.compile(
-        r"(?P<name>[A-Z][a-z]+(?:\s[A-Z][a-z]+)+)\s+"
-        r"(?P<title>[\w\s&/–-]+?)\s+"
-        r"(?P<email>\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b)",
+        r"(?P<name>[A-Z][a-z]+(?:\s[A-Z][a-z]+)+)[,\s]+"
+        r"(?P<title>[\w\s&/,.\-]+?)[,\s]+"
+        r"(?P<email>[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})",
         re.MULTILINE
     )
 
@@ -94,3 +94,31 @@ if st.button("Remove Duplicates and Extract Contacts"):
         )
     else:
         st.info("🔍 No contacts found using pattern. Try with different formatting.")
+
+    # 📞 Phone Number Extraction Section
+    st.subheader("📞 Extracted Phone Numbers")
+
+    phone_patterns = {
+        "📱 Mobile / Cell": re.compile(r"(?:mobile|cell)[\s:\-]*([\+\d\(\)\s\-]{7,})", re.IGNORECASE),
+        "📞 Direct": re.compile(r"(?:direct)[\s:\-]*([\+\d\(\)\s\-]{7,})", re.IGNORECASE),
+        "🏢 Office / Tel / Work": re.compile(r"(?:tel|telephone|office|work)[\s:\-]*([\+\d\(\)\s\-]{7,})", re.IGNORECASE)
+    }
+
+    phone_output = {}
+    for label, pattern in phone_patterns.items():
+        matches = pattern.findall(input_text)
+        cleaned = [re.sub(r"[^\d+]", "", num).strip() for num in matches]
+        unique = list(set(filter(None, cleaned)))
+        phone_output[label] = unique
+
+    for label, numbers in phone_output.items():
+        if numbers:
+            st.text_area(f"{label} Numbers ({len(numbers)} found)", value="\n".join(numbers), height=200)
+            st.download_button(
+                label=f"⬇️ Download {label} Numbers",
+                data="\n".join(numbers),
+                file_name=f"{label.lower().replace(' ', '_')}_numbers.txt",
+                mime="text/plain"
+            )
+        else:
+            st.info(f"❗ No {label.lower()} numbers found.")
