@@ -4,6 +4,14 @@ st.set_page_config(page_title="Duplicate Remover", layout="centered")
 
 st.title("🧹 Remove Duplicate Lines with Filters")
 
+# 🧠 You can update this list anytime to include more job titles
+DEFAULT_JOB_TITLES = [
+    "Manager", "Director", "Officer", "Supervisor",
+    "President", "Specialist", "Accountant", "Controller",
+    "Developer", "Engineer", "Assistant", "Coordinator",
+    "Lead", "Chief", "Technician", "Operations" president, director, ceo, chief, controller, sr, jr, accountant, executive, operation, manager, finance, technician, Hr, specialist, maintenance, photo of
+]
+
 # --- User Inputs ---
 input_text = st.text_area(
     "Paste your dataset below (one line per entry):",
@@ -14,7 +22,7 @@ input_text = st.text_area(
 # Optional job title filter (comma-separated)
 job_filter_input = st.text_input(
     "🔍 Filter out lines containing these job titles (comma-separated, optional):",
-    placeholder="Example: Manager, Director, Officer"
+    placeholder="Leave empty to use built-in job title list"
 )
 
 # Checkbox to remove "View Bio" lines
@@ -22,8 +30,11 @@ remove_view_bio = st.checkbox("Remove lines containing 'View Bio'")
 
 # --- Processing ---
 if st.button("Remove Duplicates"):
-    # Prepare job title filters
-    job_keywords = [kw.strip().lower() for kw in job_filter_input.split(",") if kw.strip()]
+    # Use user-provided job keywords if given, else fallback to default list
+    if job_filter_input.strip():
+        job_keywords = [kw.strip().lower() for kw in job_filter_input.split(",") if kw.strip()]
+    else:
+        job_keywords = [kw.lower() for kw in DEFAULT_JOB_TITLES]
 
     lines = [line.strip() for line in input_text.splitlines() if line.strip()]
     seen = set()
