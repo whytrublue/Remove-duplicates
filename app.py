@@ -57,22 +57,28 @@ if st.button("Remove Duplicates"):
     user_keywords = [kw.strip().lower() for kw in extra_keyword_input.split(",") if kw.strip()]
     all_removal_keywords = list(set(DEFAULT_REMOVE_KEYWORDS + user_keywords))
 
-    # Step 4: Process text
+   # Step 4: Process text
     lines = [line.strip() for line in input_text.splitlines() if line.strip()]
     seen = set()
     unique_lines = []
 
-    for line in lines:
-        line_lower = line.lower()
-        words = line_lower.split()
+  for line in lines:
+    line_lower = line.lower()
 
-        # Remove by job titles
-        remove_due_to_job = any(
-            difflib.get_close_matches(word, job_keywords, n=1, cutoff=0.85)
-            for word in words
-        )
-        if remove_due_to_job:
-            continue
+    # ✅ Remove by job titles (phrase-aware, case-insensitive)
+    remove_due_to_job = any(job_kw in line_lower for job_kw in job_keywords)
+    if remove_due_to_job:
+        continue
+
+    # ✅ Remove by keywords (default + custom)
+    if any(keyword in line_lower for keyword in all_removal_keywords):
+        continue
+
+    if line not in seen:
+        unique_lines.append(line)
+        seen.add(line)
+
+
 
         # Remove by keywords (default + custom)
         if any(keyword in line_lower for keyword in all_removal_keywords):
