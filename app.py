@@ -23,12 +23,17 @@ input_text = st.text_area(
     placeholder="Example:\nJohn Doe\nJane Doe\nDirector of Finance\nView Bio\n..."
 )
 
+# Optional job title filter
 job_filter_input = st.text_input(
     "🔍 Filter out lines containing these job titles (comma-separated, optional):",
     placeholder="Leave empty to use built-in job title list"
 )
 
-remove_view_bio = st.checkbox("Remove lines containing 'View Bio'")
+# Custom keywords to filter (like 'View Bio', etc.)
+extra_keyword_input = st.text_input(
+    "❌ Remove lines containing these keywords (comma-separated, optional):",
+    placeholder="Example: View Bio, Learn More, Contact Info, Photo of"
+)
 
 # Button click
 if st.button("Remove Duplicates"):
@@ -38,6 +43,9 @@ if st.button("Remove Duplicates"):
     else:
         job_keywords = [kw.lower() for kw in DEFAULT_JOB_TITLES]
 
+    # Load additional keywords (e.g. View Bio)
+    extra_keywords = [kw.strip().lower() for kw in extra_keyword_input.split(",") if kw.strip()]
+
     lines = [line.strip() for line in input_text.splitlines() if line.strip()]
     seen = set()
     unique_lines = []
@@ -46,18 +54,16 @@ if st.button("Remove Duplicates"):
         line_lower = line.lower()
         words = line_lower.split()
 
-        # Remove lines containing any job-like word (fuzzy match)
-        remove_due_to_job = False
-        for word in words:
-            matches = difflib.get_close_matches(word, job_keywords, n=1, cutoff=0.85)
-            if matches:
-                remove_due_to_job = True
-                break
+        # Remove lines similar to job titles
+        remove_due_to_job = any(
+            difflib.get_close_matches(word, job_keywords, n=1, cutoff=0.85)
+            for word in words
+        )
         if remove_due_to_job:
             continue
 
-        # Remove if "View Bio" and checkbox enabled
-        if remove_view_bio and "view bio" in line_lower:
+        # Remove lines containing extra keywords
+        if any(extra_kw in line_lower for extra_kw in extra_keywords):
             continue
 
         if line not in seen:
