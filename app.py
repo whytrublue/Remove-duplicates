@@ -1,10 +1,11 @@
 import streamlit as st
+import difflib
 
 st.set_page_config(page_title="Duplicate Remover", layout="centered")
 
 st.title("🧹 Remove Duplicate Lines with Filters")
 
-# 🧠 You can update this list anytime to include more job titles
+# Default job titles
 DEFAULT_JOB_TITLES = [
     "President", "Vice President", "CEO", "COO", "CFO", "CMO", "CTO", "Chief", "Director", "Executive", "Managing Director", "Owner", "Partner", 
     "Co-Founder", "Founder", "Principal", "Chairman", "Chairperson", "Manager", "Operations Manager", "Project Manager", "Product Manager", 
@@ -13,28 +14,25 @@ DEFAULT_JOB_TITLES = [
     "Auditor", "Buyer", "Planner", "Supervisor", "Team Lead", "Lead", "Sr", "Senior", "Jr", "Junior", "Intern", "Apprentice", "Trainee", 
     "Photographer", "Designer", "Editor", "Videographer", "Artist", "Content Creator", "Creative Director", "Developer", "Engineer", "Technician", 
     "IT Support", "Support Engineer", "Programmer", "Web Developer", "Systems Administrator", "Architect"
-
 ]
 
-# --- User Inputs ---
+# User input area
 input_text = st.text_area(
     "Paste your dataset below (one line per entry):",
     height=300,
     placeholder="Example:\nJohn Doe\nJane Doe\nDirector of Finance\nView Bio\n..."
 )
 
-# Optional job title filter (comma-separated)
 job_filter_input = st.text_input(
     "🔍 Filter out lines containing these job titles (comma-separated, optional):",
     placeholder="Leave empty to use built-in job title list"
 )
 
-# Checkbox to remove "View Bio" lines
 remove_view_bio = st.checkbox("Remove lines containing 'View Bio'")
 
-# --- Processing ---
+# Button click
 if st.button("Remove Duplicates"):
-    # Use user-provided job keywords if given, else fallback to default list
+    # Load job keywords
     if job_filter_input.strip():
         job_keywords = [kw.strip().lower() for kw in job_filter_input.split(",") if kw.strip()]
     else:
@@ -46,16 +44,22 @@ if st.button("Remove Duplicates"):
 
     for line in lines:
         line_lower = line.lower()
+        words = line_lower.split()
 
-        # Apply job title filter
-        if any(job_kw in line_lower for job_kw in job_keywords):
+        # Remove lines containing any job-like word (fuzzy match)
+        remove_due_to_job = False
+        for word in words:
+            matches = difflib.get_close_matches(word, job_keywords, n=1, cutoff=0.85)
+            if matches:
+                remove_due_to_job = True
+                break
+        if remove_due_to_job:
             continue
 
-        # Skip if "View Bio" removal is enabled
+        # Remove if "View Bio" and checkbox enabled
         if remove_view_bio and "view bio" in line_lower:
             continue
 
-        # Add if not duplicate
         if line not in seen:
             unique_lines.append(line)
             seen.add(line)
