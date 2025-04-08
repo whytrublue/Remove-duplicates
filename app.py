@@ -6,23 +6,10 @@ st.title("🧹 Remove Duplicate Lines + Extract Name/Title/Email/Phone")
 
 DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of", "headshot", "portrait"]
 
-DEFAULT_JOB_TITLES = [
-    "President", "Vice President", "CEO", "COO", "CFO", "CMO", "CTO", "Chief", "Director", "Executive",
-    "Managing Director", "Owner", "Partner", "Co-Founder", "Founder", "Principal", "Chairman", "Chairperson",
-    "Manager", "Operations Manager", "Project Manager", "Product Manager", "General Manager", "Finance Manager",
-    "HR Manager", "Office Manager", "Maintenance Manager", "Account Manager", "Marketing Manager", "Officer",
-    "Controller", "Specialist", "Analyst", "Consultant", "Coordinator", "Assistant", "Advisor", "Representative",
-    "Strategist", "Auditor", "Buyer", "Planner", "Supervisor", "Team Lead", "Lead", "Sr", "Senior", "Jr", "Junior",
-    "Intern", "Apprentice", "Trainee", "Photographer", "Designer", "Editor", "Videographer", "Artist",
-    "Content Creator", "Creative Director", "Developer", "Engineer", "Technician", "IT Support",
-    "Support Engineer", "Programmer", "Web Developer", "Systems Administrator", "Architect", "Concierge",
-    "Quality Assurance", "Accountant", "Property Manager", "Realtor"
-]
-
 input_text = st.text_area(
     "Paste your dataset below (one line per entry):",
     height=300,
-    placeholder="Example:\nJohn Doe\nJane Doe\nDirector of Finance\nView Bio\n..."
+    placeholder="Example:\nJoe Allinder\nBroker with Joe Allinder\n(972) 930-0323\n..."
 )
 
 extra_keyword_input = st.text_input(
@@ -31,11 +18,9 @@ extra_keyword_input = st.text_input(
 )
 
 if st.button("Remove Duplicates and Extract Contacts"):
-    # Prepare removal keywords
     user_keywords = [kw.strip().lower() for kw in extra_keyword_input.split(",") if kw.strip()]
     all_removal_keywords = list(set([kw.lower() for kw in DEFAULT_REMOVE_KEYWORDS] + user_keywords))
 
-    # Process input lines
     lines = [line.strip() for line in input_text.splitlines() if line.strip()]
     seen = set()
     unique_lines = []
@@ -69,10 +54,10 @@ if st.button("Remove Duplicates and Extract Contacts"):
             if current["Name"]:
                 entries.append(current.copy())
                 current = {"Name": "", "Title": "", "Email": "", "Mobile": "", "Direct": "", "Office": ""}
-            current["Name"] = line
+            current["Name"] = line.strip()
         
-        # Match job titles
-        if any(title.lower() in line.lower() for title in DEFAULT_JOB_TITLES):
+        # Match title (assuming titles are present in a subsequent line)
+        if "broker" in line.lower():
             current["Title"] = line
         
         # Match email
