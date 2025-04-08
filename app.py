@@ -4,7 +4,7 @@ import streamlit as st
 st.set_page_config(page_title="Duplicate Remover", layout="centered")
 st.title("🧹 Remove Duplicate Lines + Extract Name/Title/Email/Phone")
 
-DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of", "headshot", "Portrait"]
+DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of", "headshot", "portrait"]
 
 DEFAULT_JOB_TITLES = [
     "President", "Vice President", "CEO", "COO", "CFO", "CMO", "CTO", "Chief", "Director", "Executive",
@@ -44,7 +44,7 @@ if st.button("Remove Duplicates and Extract Contacts"):
         job_keywords = [kw for kw in job_keywords if kw not in exclusions]
 
     user_keywords = [kw.strip().lower() for kw in extra_keyword_input.split(",") if kw.strip()]
-    all_removal_keywords = [kw.lower() for kw in (DEFAULT_REMOVE_KEYWORDS + user_keywords)]
+    all_removal_keywords = list(set([kw.lower() for kw in DEFAULT_REMOVE_KEYWORDS] + user_keywords))
 
     lines = [line.strip() for line in input_text.splitlines() if line.strip()]
     seen = set()
@@ -52,8 +52,6 @@ if st.button("Remove Duplicates and Extract Contacts"):
 
     for line in lines:
         line_lower = line.lower()
-        if any(job_kw in line_lower for job_kw in job_keywords):
-            continue
         if any(keyword in line_lower for keyword in all_removal_keywords):
             continue
         if line_lower not in seen:
@@ -71,54 +69,62 @@ if st.button("Remove Duplicates and Extract Contacts"):
         mime="text/plain"
     )
 
-    # ✨ Extract name/title/email
-    contact_pattern = re.compile(
-        r"(?P<name>[A-Z][a-z]+(?:\s[A-Z][a-z]+)+)[,\s]+"
-        r"(?P<title>[\w\s&/,.\-]+?)[,\s]+"
-        r"(?P<email>[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})",
-        re.MULTILINE
-    )
+    # 🔍 Extract contacts from cleaned_text block-by-block
+    st.subheader("📬 Extracted Contacts with Phones")
+    contact_blocks = cleaned_text.split("\n\n")
+    extracted_rows = []
 
-    contacts = contact_pattern.findall(input_text)
+    for block in contact_blocks:
+        lines = block.strip().split("\n")
+        full_block = " ".join(lines)
 
-    if contacts:
-        st.subheader("📬 Extracted Contacts")
-        contact_result = "\n".join([f"{name} | {title.strip()} | {email}" for name, title, email in contacts])
-        st.text_area("Structured Contacts:", value=contact_result, height=300)
+        name = ""
+        email = ""
+        title = ""
+        cell = ""
+        phone = ""
+
+        # Email
+        email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", full_block)
+        if email_match:
+            email = email_match.group()
+
+        # Name (First Last or First Middle Last)
+        name_match = re.search(r"\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)\b", full_block)
+        if name_match:
+            name = name_match.group()
+
+        # Title
+        for job in DEFAULT_JOB_TITLES:
+            if re.search(rf"\b{re.escape(job)}\b", full_block, re.IGNORECASE):
+                title = job
+                break
+
+        # Cell
+        cell_match = re.search(r"(?:Cell(?: Phone)?|Mobile(?: Number)?)\s*[:\-]?\s*([\d\-\+\(\)\s]{7,})", full_block, re.IGNORECASE)
+        if cell_match:
+            cell = re.sub(r"[^\d+]", "", cell_match.group(1))
+
+        # Phone
+        phone_match = re.search(r"(?:Phone(?: Number)?|Tel(?:ephone)?|Office|Work|Direct)\s*[:\-]?\s*([\d\-\+\(\)\s]{7,})", full_block, re.IGNORECASE)
+        if phone_match:
+            phone = re.sub(r"[^\d+]", "", phone_match.group(1))
+
+        if name or email or title or cell or phone:
+            extracted_rows.append([name, title, email, cell, phone])
+
+    if extracted_rows:
+        st.text_area(
+            "Structured Contacts (Name | Title | Email | Cell | Phone):",
+            value="\n".join([" | ".join(row) for row in extracted_rows]),
+            height=300
+        )
 
         st.download_button(
             label="📄 Download Contacts as CSV",
-            data="Name,Title,Email\n" + "\n".join([f"{name},{title.strip()},{email}" for name, title, email in contacts]),
-            file_name="contacts.csv",
+            data="Name,Title,Email,Cell,Phone\n" + "\n".join([",".join(row) for row in extracted_rows]),
+            file_name="contacts_with_phone.csv",
             mime="text/csv"
         )
     else:
         st.info("🔍 No contacts found using pattern. Try with different formatting.")
-
-    # 📞 Phone Number Extraction Section
-    st.subheader("📞 Extracted Phone Numbers")
-
-    phone_patterns = {
-        "📱 Mobile / Cell": re.compile(r"(?:mobile|cell)[\s:\-]*([\+\d\(\)\s\-]{7,})", re.IGNORECASE),
-        "📞 Direct": re.compile(r"(?:direct)[\s:\-]*([\+\d\(\)\s\-]{7,})", re.IGNORECASE),
-        "🏢 Office / Tel / Work": re.compile(r"(?:tel|telephone|office|work)[\s:\-]*([\+\d\(\)\s\-]{7,})", re.IGNORECASE)
-    }
-
-    phone_output = {}
-    for label, pattern in phone_patterns.items():
-        matches = pattern.findall(input_text)
-        cleaned = [re.sub(r"[^\d+]", "", num).strip() for num in matches]
-        unique = list(set(filter(None, cleaned)))
-        phone_output[label] = unique
-
-    for label, numbers in phone_output.items():
-        if numbers:
-            st.text_area(f"{label} Numbers ({len(numbers)} found)", value="\n".join(numbers), height=200)
-            st.download_button(
-                label=f"⬇️ Download {label} Numbers",
-                data="\n".join(numbers),
-                file_name=f"{label.lower().replace(' ', '_')}_numbers.txt",
-                mime="text/plain"
-            )
-        else:
-            st.info(f"❗ No {label.lower()} numbers found.")
