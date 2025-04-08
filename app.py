@@ -4,7 +4,9 @@ import streamlit as st
 st.set_page_config(page_title="Duplicate Remover", layout="centered")
 st.title("🧹 Remove Duplicate Lines + Extract Name/Title/Email")
 
-DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of"]
+DEFAULT_REMOVE_KEYWORDS = [
+    "view bio", "learn more", "contact info", "photo of", "headshot", "thumbnail", "download vcard"
+]
 
 DEFAULT_JOB_TITLES = [
     "President", "Vice President", "CEO", "COO", "CFO", "CMO", "CTO", "Chief", "Director", "Executive",
@@ -34,18 +36,17 @@ extra_keyword_input = st.text_input(
 )
 
 if st.button("Remove Duplicates and Extract Contacts"):
-    if job_filter_input.strip():
-        job_keywords = [kw.strip().lower() for kw in job_filter_input.split(",") if kw.strip()]
-    else:
-        job_keywords = [kw.lower() for kw in DEFAULT_JOB_TITLES]
-
+    # Prepare job keywords
+    job_keywords = [kw.strip().lower() for kw in (job_filter_input.split(",") if job_filter_input.strip() else DEFAULT_JOB_TITLES)]
     if job_exclusion_input.strip():
         exclusions = [kw.strip().lower() for kw in job_exclusion_input.split(",") if kw.strip()]
         job_keywords = [kw for kw in job_keywords if kw not in exclusions]
 
+    # Prepare removal keywords
     user_keywords = [kw.strip().lower() for kw in extra_keyword_input.split(",") if kw.strip()]
-    all_removal_keywords = list(set(DEFAULT_REMOVE_KEYWORDS + user_keywords))
+    all_removal_keywords = list(set([kw.lower() for kw in DEFAULT_REMOVE_KEYWORDS] + user_keywords))
 
+    # Process the input text
     lines = [line.strip() for line in input_text.splitlines() if line.strip()]
     seen = set()
     unique_lines = []
@@ -76,7 +77,7 @@ if st.button("Remove Duplicates and Extract Contacts"):
         r"(?P<name>[A-Z][a-z]+(?:\s[A-Z][a-z]+)+)\s+"
         r"(?P<title>[\w\s&/–-]+?)\s+"
         r"(?P<email>\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b)",
-        re.MULTILINE
+        re.MULTILINE | re.IGNORECASE  # Make the pattern case insensitive
     )
 
     contacts = contact_pattern.findall(input_text)
