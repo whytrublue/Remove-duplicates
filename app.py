@@ -8,6 +8,7 @@ DEFAULT_REMOVE_KEYWORDS = [
     "view bio", "learn more", "contact info", "photo of", "headshot", "thumbnail", "download vcard"
 ]
 
+# Default job titles, but we're not using them anymore in the UI
 DEFAULT_JOB_TITLES = [
     "President", "Vice President", "CEO", "COO", "CFO", "CMO", "CTO", "Chief", "Director", "Executive",
     "Managing Director", "Owner", "Partner", "Co-Founder", "Founder", "Principal", "Chairman", "Chairperson",
@@ -27,21 +28,12 @@ input_text = st.text_area(
     placeholder="Example:\nJohn Doe\nJane Doe\nDirector of Finance\nView Bio\n..."
 )
 
-job_filter_input = st.text_input("🎯 Include Job Titles (comma-separated, optional):", placeholder="Example: CEO, Director, Manager")
-job_exclusion_input = st.text_input("🚫 Exclude Job Titles (comma-separated, optional):", placeholder="Example: Intern, Assistant")
-
 extra_keyword_input = st.text_input(
     "❌ Remove lines containing these keywords (comma-separated, optional):",
     placeholder="Example: View Bio, Learn More, Contact Info, Photo of"
 )
 
 if st.button("Remove Duplicates and Extract Contacts"):
-    # Prepare job keywords
-    job_keywords = [kw.strip().lower() for kw in (job_filter_input.split(",") if job_filter_input.strip() else DEFAULT_JOB_TITLES)]
-    if job_exclusion_input.strip():
-        exclusions = [kw.strip().lower() for kw in job_exclusion_input.split(",") if kw.strip()]
-        job_keywords = [kw for kw in job_keywords if kw not in exclusions]
-
     # Prepare removal keywords
     user_keywords = [kw.strip().lower() for kw in extra_keyword_input.split(",") if kw.strip()]
     all_removal_keywords = list(set([kw.lower() for kw in DEFAULT_REMOVE_KEYWORDS] + user_keywords))
@@ -53,8 +45,6 @@ if st.button("Remove Duplicates and Extract Contacts"):
 
     for line in lines:
         line_lower = line.lower()
-        if any(job_kw in line_lower for job_kw in job_keywords):
-            continue
         if any(keyword in line_lower for keyword in all_removal_keywords):
             continue
         if line_lower not in seen:
