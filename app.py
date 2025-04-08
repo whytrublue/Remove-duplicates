@@ -16,7 +16,7 @@ DEFAULT_JOB_TITLES = [
     "Intern", "Apprentice", "Trainee", "Photographer", "Designer", "Editor", "Videographer", "Artist",
     "Content Creator", "Creative Director", "Developer", "Engineer", "Technician", "IT Support",
     "Support Engineer", "Programmer", "Web Developer", "Systems Administrator", "Architect", "Concierge",
-    "Quality Assurance", "Accountant", "Property Manager"
+    "Quality Assurance", "Accountant", "Property Manager", "Realtor"
 ]
 
 input_text = st.text_area(
