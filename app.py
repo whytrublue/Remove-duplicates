@@ -1,5 +1,4 @@
 import streamlit as st
-import difflib
 
 st.set_page_config(page_title="Duplicate Remover", layout="centered")
 st.title("🧹 Remove Duplicate Lines with Filters")
@@ -25,17 +24,8 @@ input_text = st.text_area(
     placeholder="Example:\nJohn Doe\nJane Doe\nDirector of Finance\nView Bio\n..."
 )
 
-# Step 1: Job title list
-if job_filter_input.strip():
-    job_keywords = [kw.strip().lower() for kw in job_filter_input.split(",") if kw.strip()]
-else:
-    job_keywords = [kw.lower() for kw in DEFAULT_JOB_TITLES]
-
-# Step 2: Exclude from filter
-if job_exclusion_input.strip():
-    exclusions = [kw.strip().lower() for kw in job_exclusion_input.split(",") if kw.strip()]
-    job_keywords = [kw for kw in job_keywords if kw not in exclusions]
-
+job_filter_input = st.text_input("🎯 Include Job Titles (comma-separated, optional):", placeholder="Example: CEO, Director, Manager")
+job_exclusion_input = st.text_input("🚫 Exclude Job Titles (comma-separated, optional):", placeholder="Example: Intern, Assistant")
 
 extra_keyword_input = st.text_input(
     "❌ Remove lines containing these keywords (comma-separated, optional):",
@@ -68,17 +58,16 @@ if st.button("Remove Duplicates"):
         line_lower = line.lower()
 
         # ✅ Remove by job titles (phrase-aware)
-        remove_due_to_job = any(job_kw in line_lower for job_kw in job_keywords)
-        if remove_due_to_job:
+        if any(job_kw in line_lower for job_kw in job_keywords):
             continue
 
         # ✅ Remove by default/custom keywords
         if any(keyword in line_lower for keyword in all_removal_keywords):
             continue
 
-        if line not in seen:
+        if line_lower not in seen:
             unique_lines.append(line)
-            seen.add(line)
+            seen.add(line_lower)
 
     # Display cleaned results
     cleaned_text = "\n".join(unique_lines)
