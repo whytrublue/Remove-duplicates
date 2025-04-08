@@ -4,7 +4,7 @@ import streamlit as st
 st.set_page_config(page_title="Duplicate Remover", layout="centered")
 st.title("🧹 Remove Duplicate Lines + Extract Name/Title/Email/Phone")
 
-DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of", "headshot", "portrait"]
+DEFAULT_REMOVE_KEYWORDS = ["view bio", "learn more", "contact info", "photo of", "headshot", "Portrait"]
 
 DEFAULT_JOB_TITLES = [
     "President", "Vice President", "CEO", "COO", "CFO", "CMO", "CTO", "Chief", "Director", "Executive",
@@ -25,26 +25,16 @@ input_text = st.text_area(
     placeholder="Example:\nJohn Doe\nJane Doe\nDirector of Finance\nView Bio\n..."
 )
 
-job_filter_input = st.text_input("🎯 Include Job Titles (comma-separated, optional):", placeholder="Example: CEO, Director, Manager")
-job_exclusion_input = st.text_input("🚫 Exclude Job Titles (comma-separated, optional):", placeholder="Example: Intern, Assistant")
-
 extra_keyword_input = st.text_input(
     "❌ Remove lines containing these keywords (comma-separated, optional):",
     placeholder="Example: View Bio, Learn More, Contact Info, Photo of"
 )
 
 if st.button("Remove Duplicates and Extract Contacts"):
-    if job_filter_input.strip():
-        job_keywords = [kw.strip().lower() for kw in job_filter_input.split(",") if kw.strip()]
-    else:
-        job_keywords = [kw.lower() for kw in DEFAULT_JOB_TITLES]
-
-    if job_exclusion_input.strip():
-        exclusions = [kw.strip().lower() for kw in job_exclusion_input.split(",") if kw.strip()]
-        job_keywords = [kw for kw in job_keywords if kw not in exclusions]
+    job_keywords = [kw.lower() for kw in DEFAULT_JOB_TITLES]
 
     user_keywords = [kw.strip().lower() for kw in extra_keyword_input.split(",") if kw.strip()]
-    all_removal_keywords = list(set([kw.lower() for kw in DEFAULT_REMOVE_KEYWORDS] + user_keywords))
+    all_removal_keywords = list(set([k.lower() for k in DEFAULT_REMOVE_KEYWORDS] + user_keywords))
 
     lines = [line.strip() for line in input_text.splitlines() if line.strip()]
     seen = set()
@@ -69,62 +59,58 @@ if st.button("Remove Duplicates and Extract Contacts"):
         mime="text/plain"
     )
 
-    # 🔍 Extract contacts from cleaned_text block-by-block
-    st.subheader("📬 Extracted Contacts with Phones")
-    contact_blocks = cleaned_text.split("\n\n")
-    extracted_rows = []
+    # ✨ Extract contact info
+    name_pattern = re.compile(r"^[A-Z][a-z]+(?:\s[A-Z][a-z]+)+$")
+    email_pattern = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+    phone_patterns = {
+        "mobile": re.compile(r"(?:mobile|cell|cellphone)[\s:\-]*([\+\d\(\)\s\-]{7,})", re.IGNORECASE),
+        "direct": re.compile(r"(?:direct)[\s:\-]*([\+\d\(\)\s\-]{7,})", re.IGNORECASE),
+        "office": re.compile(r"(?:tel|telephone|office|work|phone)[\s:\-]*([\+\d\(\)\s\-]{7,})", re.IGNORECASE),
+    }
 
-    for block in contact_blocks:
-        lines = block.strip().split("\n")
-        full_block = " ".join(lines)
+    entries = []
+    current = {"Name": "", "Title": "", "Email": "", "Mobile": "", "Direct": "", "Office": ""}
 
-        name = ""
-        email = ""
-        title = ""
-        cell = ""
-        phone = ""
+    for line in unique_lines:
+        line = line.strip()
+        if name_pattern.match(line):
+            if current["Name"]:
+                entries.append(current.copy())
+                current = {"Name": "", "Title": "", "Email": "", "Mobile": "", "Direct": "", "Office": ""}
+            current["Name"] = line
+        elif any(title.lower() in line.lower() for title in DEFAULT_JOB_TITLES):
+            current["Title"] = line
+        elif email_match := email_pattern.search(line):
+            current["Email"] = email_match.group(0)
+        else:
+            for key, pattern in phone_patterns.items():
+                match = pattern.search(line)
+                if match:
+                    num = re.sub(r"[^\d+]", "", match.group(1))
+                    current[key.capitalize()] = num
 
-        # Email
-        email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", full_block)
-        if email_match:
-            email = email_match.group()
+    if current["Name"]:
+        entries.append(current)
 
-        # Name (First Last or First Middle Last)
-        name_match = re.search(r"\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)\b", full_block)
-        if name_match:
-            name = name_match.group()
+    if entries:
+        st.subheader("📬 Extracted Structured Contacts")
+        csv_header = "Name,Title,Email,Mobile,Direct,Office"
+        csv_data = [csv_header]
+        display_text = []
 
-        # Title
-        for job in DEFAULT_JOB_TITLES:
-            if re.search(rf"\b{re.escape(job)}\b", full_block, re.IGNORECASE):
-                title = job
-                break
+        for e in entries:
+            csv_line = f"{e['Name']},{e['Title']},{e['Email']},{e['Mobile']},{e['Direct']},{e['Office']}"
+            csv_data.append(csv_line)
+            display_text.append(" | ".join([e['Name'], e['Title'], e['Email'], e['Mobile'], e['Direct'], e['Office']]))
 
-        # Cell
-        cell_match = re.search(r"(?:Cell(?: Phone)?|Mobile(?: Number)?)\s*[:\-]?\s*([\d\-\+\(\)\s]{7,})", full_block, re.IGNORECASE)
-        if cell_match:
-            cell = re.sub(r"[^\d+]", "", cell_match.group(1))
-
-        # Phone
-        phone_match = re.search(r"(?:Phone(?: Number)?|Tel(?:ephone)?|Office|Work|Direct)\s*[:\-]?\s*([\d\-\+\(\)\s]{7,})", full_block, re.IGNORECASE)
-        if phone_match:
-            phone = re.sub(r"[^\d+]", "", phone_match.group(1))
-
-        if name or email or title or cell or phone:
-            extracted_rows.append([name, title, email, cell, phone])
-
-    if extracted_rows:
-        st.text_area(
-            "Structured Contacts (Name | Title | Email | Cell | Phone):",
-            value="\n".join([" | ".join(row) for row in extracted_rows]),
-            height=300
-        )
+        result = "\n".join(display_text)
+        st.text_area("Structured Contacts:", value=result, height=300)
 
         st.download_button(
             label="📄 Download Contacts as CSV",
-            data="Name,Title,Email,Cell,Phone\n" + "\n".join([",".join(row) for row in extracted_rows]),
-            file_name="contacts_with_phone.csv",
+            data="\n".join(csv_data),
+            file_name="contacts.csv",
             mime="text/csv"
         )
     else:
-        st.info("🔍 No contacts found using pattern. Try with different formatting.")
+        st.info("🔍 No contacts found. Please try with a different format.")
