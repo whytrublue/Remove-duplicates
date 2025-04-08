@@ -57,30 +57,20 @@ if st.button("Remove Duplicates"):
     user_keywords = [kw.strip().lower() for kw in extra_keyword_input.split(",") if kw.strip()]
     all_removal_keywords = list(set(DEFAULT_REMOVE_KEYWORDS + user_keywords))
 
-# Step 4: Process text
-lines = [line.strip() for line in input_text.splitlines() if line.strip()]
-seen = set()
-unique_lines = []
+    # Step 4: Process text
+    lines = [line.strip() for line in input_text.splitlines() if line.strip()]
+    seen = set()
+    unique_lines = []
 
-for line in lines:
-    line_lower = line.lower()
+    for line in lines:
+        line_lower = line.lower()
 
-    # ✅ Remove by job titles (phrase-aware, case-insensitive)
-    remove_due_to_job = any(job_kw in line_lower for job_kw in job_keywords)
-    if remove_due_to_job:
-        continue
+        # ✅ Remove by job titles (phrase-aware)
+        remove_due_to_job = any(job_kw in line_lower for job_kw in job_keywords)
+        if remove_due_to_job:
+            continue
 
-    # ✅ Remove by keywords (default + custom)
-    if any(keyword in line_lower for keyword in all_removal_keywords):
-        continue
-
-    if line not in seen:
-        unique_lines.append(line)
-        seen.add(line)
-
-
-
-        # Remove by keywords (default + custom)
+        # ✅ Remove by default/custom keywords
         if any(keyword in line_lower for keyword in all_removal_keywords):
             continue
 
@@ -88,8 +78,8 @@ for line in lines:
             unique_lines.append(line)
             seen.add(line)
 
+    # Display cleaned results
     cleaned_text = "\n".join(unique_lines)
-
     st.success(f"✅ {len(unique_lines)} unique lines (removed {len(lines) - len(unique_lines)} duplicates or filtered lines)")
 
     st.text_area("🎯 Cleaned Result (copy from here):", value=cleaned_text, height=300)
